@@ -1,8 +1,14 @@
 # Benchmarks
 
-All numbers below come from real subagent runs inside Anthropic's Cowork mode on 2026-04-28. Every "with-skill" run reads `SKILL.md` before responding; every "baseline" run is the same prompt with no skill loaded. Outputs are saved verbatim and inspected.
+All numbers come from subagent runs inside Anthropic's Cowork mode on 2026-04-28. With-skill runs read `SKILL.md` before responding; baseline runs use the same prompt with no skill loaded.
 
-This is **not** a synthetic eval. Every test case is something a real developer would actually type.
+### Methodology caveats (read these before the numbers)
+
+- **N is small.** Trigger accuracy is 16 prompts × 4 runs. Execution quality is 6 paired cases. This is a sanity check, not a benchmark in the statistical sense.
+- **Single author, single day.** All four versions (v0.1 → v0.4) were written and evaluated on 2026-04-28 by the skill's author. Replication by a third party would carry more weight than the numbers below.
+- **Trigger accuracy measures the description, not the skill body.** The evaluator agent only reads the `description` field. A well-tuned description that triggers correctly says nothing about whether the loaded skill changes Claude's output.
+- **Baseline = "no skill loaded", not "modern system prompt".** Recent Claude versions already discourage some of these anti-patterns. The incremental value over a current system prompt is **not** measured here.
+- **Same author writes both the skill and the test prompts.** Goodhart's risk applies: the description was tuned against these prompts.
 
 ---
 
@@ -19,9 +25,11 @@ This is **not** a synthetic eval. Every test case is something a real developer 
 | Recall | 8/8 = **100%** |
 | F1 | **100%** |
 
-### Single-run variance
+### Single-run variance (what the majority-vote headline hides)
 
-13/16 prompts received unanimous judgments across all 4 runs. 3 prompts (#1, #2, #7) showed 2-1 splits — all on borderline "simple coding" cases. By the official Anthropic guidance ("Claude only consults skills for tasks it can't easily handle on its own"), this borderline behavior is expected and not a bug.
+13/16 prompts received unanimous judgments across all 4 runs. 3 prompts (#1, #2, #7) showed 2-1 splits — all on borderline "simple coding" cases. Majority vote rounds these to 100%, but a different sample of 4 runs could plausibly flip one of them.
+
+By the official Anthropic guidance ("Claude only consults skills for tasks it can't easily handle on its own"), borderline behavior on borderline cases is expected. But the headline F1 = 100% should be read as **"100% on majority vote across this particular 4-run sample"**, not as "the description partitions cases cleanly."
 
 ### Should-not-trigger correctness
 
@@ -70,28 +78,34 @@ The 8 negative cases include near-misses designed to test if the description is 
 | 0→1 simple tasks | 57.6k tokens, 8.1s | 60.8k tokens, 21.0s | **+5.6%** | **+157%** |
 | Mid-project scenarios | 59.2k tokens, 19.2s | 60.8k tokens, 27.1s | **+2.6%** | **+41%** |
 
-### The most important finding
+### Reading the time cost
 
-**Time overhead inversely correlates with task complexity.** As tasks get harder:
-- Baseline starts taking real time (because the model has to think anyway)
-- The skill's "deliberation tax" becomes a smaller fraction of total cost
+Time overhead is inverse to task complexity:
+- On trivial 0→1 tasks the baseline finishes in ~8s, so the skill's "deliberation tax" looks large (+157%).
+- On mid-project tasks the baseline already takes ~19s, so the same tax is a smaller fraction (+41%).
 
-For trivial tasks, the skill is expensive (+157% time). For complex inherited-codebase scenarios, the skill almost pays for itself (+41% time, with significantly better output).
+This is not the skill "paying for itself" on hard tasks — it is the **denominator growing**. The skill still adds 5–8 seconds of deliberation either way. Whether that deliberation produces better output on hard tasks is the question, and the 3 mid-project cases above are too few to answer it confidently.
 
-**Implication for users**: don't load this skill for trivial chat / lookup tasks. Load it for code work where the cost gradient is favorable.
+**Practical takeaway**: don't load this skill for trivial chat / lookup / one-shot script tasks. The cost gradient is unfavorable and the skill's value is hardest to see there.
 
 ---
 
-## What was measured but did NOT improve
+## What did not improve
 
-Honest reporting of trade-offs (no benchmark cherry-picking):
+- **Output length goes up, not down.** Despite the principle "先删后加", with-skill responses add verification commands, atomic-fact lists, and risk callouts. Character count is consistently higher than baseline. The skill's brevity lives in the *thinking*, not the *printed output*.
+- **"止" costs a round-trip.** When the model halts to ask, you have to answer before getting code. For prototyping where you want something running fast, this is friction.
+- **Prohibition #1 over-fires.** It can trigger even when the user clearly explains the behavior verbally. Known issue, not fixed in v0.4.
 
-- **The skill makes outputs longer**, not shorter. Despite the principle "先删后加", a with-skill response includes verification commands, atomic-fact lists, and risk callouts. The total character count is consistently **higher** than baseline. The skill's brevity is in the *thinking*, not the *output*.
-- **The "止" stance still costs a round-trip.** When the model halts to ask, you have to answer before getting code. For prototyping where you'd rather see something running, this is friction.
-- **Prohibitions can over-fire on edge cases.** Prohibition #1 (no behavior description without source) can trigger even when the user clearly explains the behavior verbally. v0.5 may need to clarify this.
+---
+
+## What is not measured
+
+- **Whether the skill beats Claude's current system prompt.** Baseline is no-skill, not modern-system-prompt. Some anti-patterns the skill targets are already discouraged by default.
+- **Whether it helps users other than the author.** Same person wrote the skill, the prompts, and the post-run inspection. Independent replication would carry more weight than these numbers.
+- **Whether the qualitative wins on the 6 paired cases generalize.** N=6 is a demonstration, not a benchmark.
 
 ---
 
 ## Reproducing these benchmarks
 
-The benchmark methodology is documented in [`text_evolution/2026-04-28-initial-eval.md`](./text_evolution/2026-04-28-initial-eval.md). Anyone with Cowork access (or any subagent-capable Claude environment) can re-run them. Pull requests with new benchmark scenarios are welcomed.
+Methodology log: [`text_evolution/2026-04-28-initial-eval.md`](./text_evolution/2026-04-28-initial-eval.md). Anyone with subagent-capable Claude access can re-run. New scenarios — especially ones where the skill **fails** — are more valuable than ones where it succeeds; PRs welcomed.

@@ -1,8 +1,8 @@
 # Changelog
 
-All notable changes to this skill, with rationale.
-
-This skill follows the principle stated in its own constitution: **"v1 完成即 v2 起点" — every released version is a starting point for the next.** No version is treated as "done".
+> **Read this first**: all four entries below are dated 2026-04-28. They are not four field-tested releases — they are four same-day edits during a single design session, written up as a release sequence for traceability. Treat v0.1 → v0.4 as one initial release with its iteration history kept visible, not as a track record of versions that survived contact with real projects.
+>
+> The first version to be tested outside the author's own benchmark prompts will be v0.5. Until then, every claim below is internal evidence only.
 
 ---
 
@@ -39,7 +39,7 @@ This skill follows the principle stated in its own constitution: **"v1 完成即
 
 ## [v0.2] - 2026-04-28
 
-### Fixed (the original sin)
+### Fixed
 - **Resolved the internal contradiction between "止" stance and Prohibition #5.**
   - The conflict in v0.1: "止" stance instructed "list 2–3 explanations". Prohibition #5 forbade "listing parallel options for the user to pick". The model would inevitably violate one to comply with the other.
   - **Resolution via scope separation**:
@@ -78,9 +78,11 @@ The benchmark on v0.1 revealed all of these issues in 3 test cases. Without rele
 
 ## Versioning philosophy
 
-Each version is shipped with:
+Each version entry carries:
 - A specific behavioral change
-- A reason for the change (drawn from a real failure case)
-- A measurable improvement (or honest regression note)
+- A reason (drawn from a benchmark case)
+- A measurable delta, or an honest note when there isn't one
 
-Versions are not bumped for cosmetic changes. If the skill text changes but the behavioral test results don't move, that change doesn't earn a version bump — it's just a typo fix.
+Versions are not bumped for cosmetic changes. If the skill text changes but the benchmark numbers don't move, that change is a typo fix, not a version.
+
+**Caveat that applies to the entire history above**: same-day iteration by the same author is not the same as field-tested evolution. The version sequence reflects authoring rigor, not deployment durability. Real-world entries in `text_evolution/` are what will earn the next version bump.
